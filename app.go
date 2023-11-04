@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"os"
 	"os/signal"
@@ -13,7 +13,7 @@ import (
 )
 
 type App struct {
-	db     *sql.DB
+	db     *pgxpool.Pool
 	client mqtt.Client
 }
 
@@ -32,17 +32,18 @@ func NewApp() *App {
 
 	app.client = client
 
-	db, err := sql.Open("sqlite3", cfg.DatabasePath)
+	conn, err := pgxpool.New(context.Background(), cfg.ProvidePostgresUrl())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	app.db = db
+	app.db = conn
 
 	return &app
 }
 
 func (a *App) Run() {
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	signal.Notify(sig, syscall.SIGTERM)
@@ -84,11 +85,12 @@ func (a *App) buildHandler(sensorTopic string) mqtt.MessageHandler {
 }
 
 func (a *App) persistDatapoint(data WrappedData) error {
-	_, err := a.db.Exec(`INSERT INTO sensor_data (SensorName, Timestamp, Battery, Humidity, LinkQuality, PowerOutageCount, Pressure, Temperature, Voltage)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, data.SensorName, data.Timestamp, data.Battery, data.Humidity, data.LinkQuality, data.PowerOutageCount, data.Pressure, data.Temperature, data.Voltage)
+	_, err := a.db.Exec(context.Background(), `INSERT INTO sensor_data (SensorName, Timestamp, Battery, Humidity, LinkQuality, 
+                         PowerOutageCount, Pressure, Temperature, Voltage)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, data.SensorName, data.Timestamp, data.Battery,
+		data.Humidity, data.LinkQuality, data.PowerOutageCount, data.Pressure, data.Temperature, data.Voltage)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }

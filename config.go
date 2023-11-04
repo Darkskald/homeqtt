@@ -12,7 +12,17 @@ type Config struct {
 	MqttHost     string `env:"MQTTHOST,required"`
 	MqttPort     string `env:"MQTTPORT,required"`
 	SensorTopics string `env:"SENSORTOPICS,required"`
-	DatabasePath string `env:"DBPATH,required"`
+	//DatabasePath string `env:"DBPATH,required"`
+	PostgresDB       string `env:"POSTGRES_DB,required"`
+	PostgresUser     string `env:"POSTGRES_USER,required"`
+	PostgresPassword string `env:"POSTGRES_PASSWORD,required"`
+	PostgresHost     string `env:"POSTGRES_HOST,required"`
+	PostgresPort     string `env:"POSTGRES_PORT,required"`
+}
+
+func (c Config) ProvidePostgresUrl() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", c.PostgresUser, c.PostgresPassword, c.PostgresHost,
+		c.PostgresPort, c.PostgresDB)
 }
 
 func ParseConfig() Config {
