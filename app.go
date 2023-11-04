@@ -87,7 +87,7 @@ func (a *App) buildHandler(sensorTopic string) mqtt.MessageHandler {
 func (a *App) persistDatapoint(data WrappedData) error {
 	_, err := a.db.Exec(context.Background(), `INSERT INTO sensor_data (SensorName, Timestamp, Battery, Humidity, LinkQuality, 
                          PowerOutageCount, Pressure, Temperature, Voltage)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, data.SensorName, data.Timestamp, data.Battery,
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, data.SensorName, data.Timestamp, data.Battery,
 		data.Humidity, data.LinkQuality, data.PowerOutageCount, data.Pressure, data.Temperature, data.Voltage)
 	if err != nil {
 		return err
